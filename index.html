@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Synapse Sprint</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from './js/three.module.js';
+    import { VRButton } from './js/VRButton.js';
+    import { OrbitControls } from './js/OrbitControls.js';
+    import { XRControllerModelFactory } from './js/XRControllerModelFactory.js';
+    import { XRHandModelFactory } from './js/XRHandModelFactory.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x505050);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.6, 3);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
+    document.body.appendChild(VRButton.createButton(renderer));
+
+    const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+    light.position.set(0, 20, 0);
+    scene.add(light);
+
+    const floorGeometry = new THREE.PlaneGeometry(100, 100);
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.6, 0);
+    controls.update();
+
+    // Controllers
+    const controller1 = renderer.xr.getController(0);
+    const controller2 = renderer.xr.getController(1);
+    scene.add(controller1);
+    scene.add(controller2);
+
+    const controllerModelFactory = new XRControllerModelFactory();
+    const controllerGrip1 = renderer.xr.getControllerGrip(0);
+    controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
+    scene.add(controllerGrip1);
+
+    const controllerGrip2 = renderer.xr.getControllerGrip(1);
+    controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
+    scene.add(controllerGrip2);
+
+    const handModelFactory = new XRHandModelFactory();
+    const hand1 = renderer.xr.getHand(0);
+    hand1.add(handModelFactory.createHandModel(hand1));
+    scene.add(hand1);
+
+    const hand2 = renderer.xr.getHand(1);
+    hand2.add(handModelFactory.createHandModel(hand2));
+    scene.add(hand2);
+
+    // Animation loop
+    function animate() {
+      renderer.setAnimationLoop(() => {
+        renderer.render(scene, camera);
+      });
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
